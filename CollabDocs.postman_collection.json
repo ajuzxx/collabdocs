@@ -666,11 +666,12 @@
                                     "    pm.response.to.have.status(200);",
                                     "});",
                                     "",
-                                    "pm.test(\"Response contains version, comment, and tag counts\", function () {",
+                                    "pm.test(\"Response contains version, comment, contributor, and tag counts\", function () {",
                                     "    var data = pm.response.json();",
                                     "    pm.expect(data).to.have.property(\"document_id\");",
                                     "    pm.expect(data).to.have.property(\"total_versions\");",
                                     "    pm.expect(data).to.have.property(\"total_comments\");",
+                                    "    pm.expect(data).to.have.property(\"total_contributors\");",
                                     "    pm.expect(data).to.have.property(\"total_tags\");",
                                     "});"
                                 ]

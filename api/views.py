@@ -79,6 +79,9 @@ class WorkspaceViewSet(viewsets.ModelViewSet):
             "draft_documents": documents["drafts"],
             "total_members": member_count,
             "total_comments": total_comments,
+            "document_count": documents["total"],
+            "member_count": member_count,
+            "comment_count": total_comments,
         })
 
 
@@ -106,6 +109,14 @@ class WorkspaceViewSet(viewsets.ModelViewSet):
             role=WorkspaceMember.Role.ADMIN,
         )
 
+        # Record workspace creation in audit log
+        AuditLog.objects.create(
+            actor=self.request.user,
+            action="created",
+            model_name="Workspace",
+            object_id=str(workspace.pk),
+        )
+
     @action(detail=True, methods=["get", "post"])
     def members(self, request, pk=None):
         workspace = self.get_object()
@@ -115,12 +126,13 @@ class WorkspaceViewSet(viewsets.ModelViewSet):
             serializer = WorkspaceMemberSerializer(members, many=True)
             return Response(serializer.data)
 
-        serializer = WorkspaceMemberSerializer(
-            data={
-                **request.data,
-                "workspace": workspace.pk,
-            }
-        )
+        if hasattr(request.data, "dict"):
+            data = request.data.dict()
+        else:
+            data = dict(request.data)
+        data["workspace"] = workspace.pk
+
+        serializer = WorkspaceMemberSerializer(data=data)
 
         # Return 409 when this user is already a member.
         if serializer.is_valid():
@@ -139,8 +151,9 @@ class WorkspaceViewSet(viewsets.ModelViewSet):
             )
 
         # Convert duplicate-membership validation errors from 400 to 409.
+        user_val = data.get("user")
         if "non_field_errors" in serializer.errors:
-            if workspace.members.filter(user_id=request.data.get("user")).exists():
+            if user_val and workspace.members.filter(user_id=user_val).exists():
                 return Response(
                     {"detail": "This user is already a member of this workspace."},
                     status=status.HTTP_409_CONFLICT,
@@ -262,10 +275,12 @@ class DocumentViewSet(viewsets.ModelViewSet):
         ).annotate(
             total_versions=Count("versions", distinct=True),
             total_comments=Count("comments", distinct=True),
+            total_contributors=Count("versions__saved_by", distinct=True),
             total_tags=Count("tags", distinct=True),
         ).values(
             "total_versions",
             "total_comments",
+            "total_contributors",
             "total_tags",
         ).first()
 
@@ -274,7 +289,12 @@ class DocumentViewSet(viewsets.ModelViewSet):
             "title": document.title,
             "total_versions": stats["total_versions"],
             "total_comments": stats["total_comments"],
+            "total_contributors": stats["total_contributors"],
+            "contributor_count": stats["total_contributors"],
+            "version_count": stats["total_versions"],
+            "comment_count": stats["total_comments"],
             "total_tags": stats["total_tags"],
+            "tag_count": stats["total_tags"],
         })
 
 ############################################
@@ -406,9 +426,13 @@ class AuditLogViewSet(viewsets.ReadOnlyModelViewSet):
         timestamp_lte = self.request.query_params.get("timestamp__lte")
 
         if timestamp_gte:
+            if " " in timestamp_gte and "+" not in timestamp_gte:
+                timestamp_gte = timestamp_gte.replace(" ", "+")
             queryset = queryset.filter(timestamp__gte=timestamp_gte)
 
         if timestamp_lte:
+            if " " in timestamp_lte and "+" not in timestamp_lte:
+                timestamp_lte = timestamp_lte.replace(" ", "+")
             queryset = queryset.filter(timestamp__lte=timestamp_lte)
 
         return queryset
