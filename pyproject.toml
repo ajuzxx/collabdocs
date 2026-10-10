@@ -1,0 +1,11 @@
+[project]
+name = "collabdocs"
+version = "0.1.0"
+requires-python = ">=3.13"
+dependencies = [
+    "django>=6.1.2",
+    "djangorestframework>=3.18.3",
+    "djangorestframework-simplejwt>=5.5.1",
+    "psycopg[binary]>=3.3.6",
+    "python-dotenv>=1.2.4",
+]

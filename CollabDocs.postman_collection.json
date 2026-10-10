@@ -1,0 +1,962 @@
+{
+    "info": {
+        "_postman_id": "39b357bd-e28c-4d17-bf36-4a988041967a",
+        "name": "CollabDocs API",
+        "description": "Complete Postman collection for the CollabDocs Django REST Framework API covering Users, Workspaces, Documents, Comments, Tags, and Audit Logs.",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "auth": {
+        "type": "bearer",
+        "bearer": [
+            {
+                "key": "token",
+                "value": "{{access_token}}",
+                "type": "string"
+            }
+        ]
+    },
+    "event": [],
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "http://127.0.0.1:8000",
+            "type": "string"
+        },
+        {
+            "key": "access_token",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "user_id",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "workspace_id",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "document_id",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "tag_id",
+            "value": "",
+            "type": "string"
+        }
+    ],
+    "item": [
+        {
+            "name": "Users",
+            "description": "Endpoints for user registration and retrieval.",
+            "item": [
+                {
+                    "name": "Create User",
+                    "request": {
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"username\": \"collabdocs_test\",\n    \"first_name\": \"Test\",\n    \"last_name\": \"User\",\n    \"email\": \"collabdocs.test@example.com\",\n    \"phone\": \"9000000001\",\n    \"password\": \"TestPass123!\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/users/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "users",
+                                ""
+                            ]
+                        },
+                        "description": "Create a new user account (public registration). Concept: ModelViewSet, ModelSerializer, validation."
+                    },
+                    "response": [],
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Status code is 201 Created\", function () {",
+                                    "    pm.response.to.have.status(201);",
+                                    "});",
+                                    "",
+                                    "pm.test(\"Response contains user ID and matching email\", function () {",
+                                    "    var data = pm.response.json();",
+                                    "    pm.expect(data).to.have.property(\"id\");",
+                                    "    pm.expect(data.email).to.eql(\"collabdocs.test@example.com\");",
+                                    "    if (data.id) {",
+                                    "        pm.collectionVariables.set(\"user_id\", data.id);",
+                                    "    }",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Get User by ID",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/users/{{user_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "users",
+                                "{{user_id}}",
+                                ""
+                            ]
+                        },
+                        "description": "Retrieve user details by UUID primary key. Concept: UUID primary key and serializer response."
+                    },
+                    "response": [],
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Status code is 200 OK\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});",
+                                    "",
+                                    "pm.test(\"Response contains user details\", function () {",
+                                    "    var data = pm.response.json();",
+                                    "    pm.expect(data).to.have.property(\"id\");",
+                                    "    pm.expect(data).to.have.property(\"username\");",
+                                    "    pm.expect(data).to.have.property(\"email\");",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Workspaces",
+            "description": "Endpoints for workspace management, memberships, and summary aggregation.",
+            "item": [
+                {
+                    "name": "Create Workspace",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"CollabDocs Test Workspace\",\n    \"is_active\": true\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/workspaces/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "workspaces",
+                                ""
+                            ]
+                        },
+                        "description": "Create a workspace and automatically add the authenticated user as an admin member. Concept: transaction.atomic(), perform_create()."
+                    },
+                    "response": [],
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Status code is 201 Created\", function () {",
+                                    "    pm.response.to.have.status(201);",
+                                    "});",
+                                    "",
+                                    "pm.test(\"Response contains workspace ID and name\", function () {",
+                                    "    var data = pm.response.json();",
+                                    "    pm.expect(data).to.have.property(\"id\");",
+                                    "    pm.expect(data.name).to.eql(\"CollabDocs Test Workspace\");",
+                                    "    if (data.id) {",
+                                    "        pm.collectionVariables.set(\"workspace_id\", data.id);",
+                                    "    }",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Get Workspace by ID",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/workspaces/{{workspace_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "workspaces",
+                                "{{workspace_id}}",
+                                ""
+                            ]
+                        },
+                        "description": "Retrieve a workspace including member_count. Concept: annotate() and Count."
+                    },
+                    "response": [],
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Status code is 200 OK\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});",
+                                    "",
+                                    "pm.test(\"Response contains workspace data and member_count\", function () {",
+                                    "    var data = pm.response.json();",
+                                    "    pm.expect(data).to.have.property(\"id\");",
+                                    "    pm.expect(data).to.have.property(\"name\");",
+                                    "    pm.expect(data).to.have.property(\"member_count\");",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Add Workspace Member",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"user\": \"{{user_id}}\",\n    \"role\": \"editor\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/workspaces/{{workspace_id}}/members/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "workspaces",
+                                "{{workspace_id}}",
+                                "members",
+                                ""
+                            ]
+                        },
+                        "description": "Add a user to the workspace with a role (admin/editor/viewer). Returns 409 Conflict if already a member. Concept: Foreign keys, unique constraints, validation, HTTP 409 handling."
+                    },
+                    "response": [],
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Status code is 201 Created or 409 Conflict\", function () {",
+                                    "    pm.expect([201, 409]).to.include(pm.response.code);",
+                                    "});",
+                                    "",
+                                    "if (pm.response.code === 201) {",
+                                    "    pm.test(\"Response contains membership details\", function () {",
+                                    "        var data = pm.response.json();",
+                                    "        pm.expect(data).to.have.property(\"id\");",
+                                    "        pm.expect(data.role).to.eql(\"editor\");",
+                                    "    });",
+                                    "} else if (pm.response.code === 409) {",
+                                    "    pm.test(\"Duplicate membership rejected with 409 Conflict\", function () {",
+                                    "        var data = pm.response.json();",
+                                    "        pm.expect(data).to.have.property(\"detail\");",
+                                    "    });",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "List Workspace Members",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/workspaces/{{workspace_id}}/members/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "workspaces",
+                                "{{workspace_id}}",
+                                "members",
+                                ""
+                            ]
+                        },
+                        "description": "List all members and their roles in a workspace. Concept: select_related() and nested serializer fields."
+                    },
+                    "response": [],
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Status code is 200 OK\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});",
+                                    "",
+                                    "pm.test(\"Response is an array of members\", function () {",
+                                    "    var data = pm.response.json();",
+                                    "    pm.expect(data).to.be.an(\"array\");",
+                                    "    if (data.length > 0) {",
+                                    "        pm.expect(data[0]).to.have.property(\"role\");",
+                                    "        pm.expect(data[0]).to.have.property(\"user_email\");",
+                                    "    }",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Workspace Summary",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/workspaces/{{workspace_id}}/summary/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "workspaces",
+                                "{{workspace_id}}",
+                                "summary",
+                                ""
+                            ]
+                        },
+                        "description": "Retrieve document metrics and member count for the workspace. Concept: @action, aggregation, annotate(), and Count."
+                    },
+                    "response": [],
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Status code is 200 OK\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});",
+                                    "",
+                                    "pm.test(\"Response contains summary counts\", function () {",
+                                    "    var data = pm.response.json();",
+                                    "    pm.expect(data).to.have.property(\"workspace_id\");",
+                                    "    pm.expect(data).to.have.property(\"total_documents\");",
+                                    "    pm.expect(data).to.have.property(\"published_documents\");",
+                                    "    pm.expect(data).to.have.property(\"draft_documents\");",
+                                    "    pm.expect(data).to.have.property(\"total_members\");",
+                                    "    pm.expect(data).to.have.property(\"total_comments\");",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Documents",
+            "description": "Endpoints for creating, updating, filtering, versioning, statistics, and tagging documents.",
+            "item": [
+                {
+                    "name": "Create Document",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"title\": \"CollabDocs API Test\",\n    \"content\": \"Initial document content.\",\n    \"workspace\": \"{{workspace_id}}\",\n    \"status\": \"draft\",\n    \"tags\": []\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/documents/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "documents",
+                                ""
+                            ]
+                        },
+                        "description": "Create a document and automatically create its initial version (v1) atomically. Concept: transaction.atomic() and version-number logic."
+                    },
+                    "response": [],
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Status code is 201 Created\", function () {",
+                                    "    pm.response.to.have.status(201);",
+                                    "});",
+                                    "",
+                                    "pm.test(\"Response contains document ID and draft status\", function () {",
+                                    "    var data = pm.response.json();",
+                                    "    pm.expect(data).to.have.property(\"id\");",
+                                    "    pm.expect(data.status).to.eql(\"draft\");",
+                                    "    if (data.id) {",
+                                    "        pm.collectionVariables.set(\"document_id\", data.id);",
+                                    "    }",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Update Document",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"title\": \"CollabDocs API Test - Updated\",\n    \"content\": \"Updated content saved as a new version.\",\n    \"workspace\": \"{{workspace_id}}\",\n    \"status\": \"published\",\n    \"tags\": []\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/documents/{{document_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "documents",
+                                "{{document_id}}",
+                                ""
+                            ]
+                        },
+                        "description": "Update a document and increment its version number atomically with a row lock. Concept: transaction.atomic() and perform_update()."
+                    },
+                    "response": [],
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Status code is 200 OK\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});",
+                                    "",
+                                    "pm.test(\"Document updated with new title and published status\", function () {",
+                                    "    var data = pm.response.json();",
+                                    "    pm.expect(data.title).to.eql(\"CollabDocs API Test - Updated\");",
+                                    "    pm.expect(data.status).to.eql(\"published\");",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "List Documents with Filtering",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/documents/?workspace={{workspace_id}}&status=draft&search=CollabDocs",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "documents",
+                                ""
+                            ],
+                            "query": [
+                                {
+                                    "key": "workspace",
+                                    "value": "{{workspace_id}}"
+                                },
+                                {
+                                    "key": "status",
+                                    "value": "draft"
+                                },
+                                {
+                                    "key": "search",
+                                    "value": "CollabDocs"
+                                },
+                                {
+                                    "key": "tag",
+                                    "value": "collabdocs-test",
+                                    "disabled": true,
+                                    "description": "Optional: Filter documents by tag name"
+                                }
+                            ]
+                        },
+                        "description": "List documents with filtering by workspace, status, tag name, and search query. Concept: Q objects, query parameters, filter(), and icontains."
+                    },
+                    "response": [],
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Status code is 200 OK\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});",
+                                    "",
+                                    "pm.test(\"Response is an array of documents\", function () {",
+                                    "    var data = pm.response.json();",
+                                    "    pm.expect(data).to.be.an(\"array\");",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "List Document Versions",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/documents/{{document_id}}/versions/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "documents",
+                                "{{document_id}}",
+                                "versions",
+                                ""
+                            ]
+                        },
+                        "description": "Retrieve document versions ordered by version number. Concept: reverse foreign-key lookup, filter(), and order_by()."
+                    },
+                    "response": [],
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Status code is 200 OK\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});",
+                                    "",
+                                    "pm.test(\"Response is an array of document versions\", function () {",
+                                    "    var data = pm.response.json();",
+                                    "    pm.expect(data).to.be.an(\"array\");",
+                                    "    if (data.length > 0) {",
+                                    "        pm.expect(data[0]).to.have.property(\"version_number\");",
+                                    "        pm.expect(data[0]).to.have.property(\"content\");",
+                                    "    }",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Document Statistics",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/documents/{{document_id}}/stats/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "documents",
+                                "{{document_id}}",
+                                "stats",
+                                ""
+                            ]
+                        },
+                        "description": "Retrieve total version count, comment count, and tag count for a document. Concept: @action, aggregate(), annotate(), and Count."
+                    },
+                    "response": [],
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Status code is 200 OK\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});",
+                                    "",
+                                    "pm.test(\"Response contains version, comment, and tag counts\", function () {",
+                                    "    var data = pm.response.json();",
+                                    "    pm.expect(data).to.have.property(\"document_id\");",
+                                    "    pm.expect(data).to.have.property(\"total_versions\");",
+                                    "    pm.expect(data).to.have.property(\"total_comments\");",
+                                    "    pm.expect(data).to.have.property(\"total_tags\");",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Add Tags to Document",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"tags\": [\n        \"{{tag_id}}\"\n    ]\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/documents/{{document_id}}/tags/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "documents",
+                                "{{document_id}}",
+                                "tags",
+                                ""
+                            ]
+                        },
+                        "description": "Add one or more existing tags to a document via tag UUID array. Concept: @action, ManyToManyField, and .set() or equivalent."
+                    },
+                    "response": [],
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Status code is 200 OK or 400 Bad Request\", function () {",
+                                    "    pm.expect([200, 400]).to.include(pm.response.code);",
+                                    "});",
+                                    "",
+                                    "if (pm.response.code === 200) {",
+                                    "    pm.test(\"Tags updated success message\", function () {",
+                                    "        var data = pm.response.json();",
+                                    "        pm.expect(data.detail).to.eql(\"Tags updated successfully.\");",
+                                    "    });",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Comments",
+            "description": "Endpoints for threaded commenting on documents.",
+            "item": [
+                {
+                    "name": "Create Comment or Reply",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"document\": \"{{document_id}}\",\n    \"content\": \"This is a test comment.\",\n    \"parent\": null\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/comments/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "comments",
+                                ""
+                            ]
+                        },
+                        "description": "Create a top-level comment (parent: null) or a threaded reply to an existing comment. Concept: self-referential foreign key, SerializerMethodField, and validation."
+                    },
+                    "response": [],
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Status code is 201 Created\", function () {",
+                                    "    pm.response.to.have.status(201);",
+                                    "});",
+                                    "",
+                                    "pm.test(\"Response contains comment ID and content\", function () {",
+                                    "    var data = pm.response.json();",
+                                    "    pm.expect(data).to.have.property(\"id\");",
+                                    "    pm.expect(data.content).to.eql(\"This is a test comment.\");",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "List Document Comments",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/comments/?document={{document_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "comments",
+                                ""
+                            ],
+                            "query": [
+                                {
+                                    "key": "document",
+                                    "value": "{{document_id}}"
+                                }
+                            ]
+                        },
+                        "description": "List comments for a specific document including nested threaded replies. Concept: filter(), select_related(), and query parameters."
+                    },
+                    "response": [],
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Status code is 200 OK\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});",
+                                    "",
+                                    "pm.test(\"Response is an array of comments with replies\", function () {",
+                                    "    var data = pm.response.json();",
+                                    "    pm.expect(data).to.be.an(\"array\");",
+                                    "    if (data.length > 0) {",
+                                    "        pm.expect(data[0]).to.have.property(\"replies\");",
+                                    "    }",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Tags",
+            "description": "Endpoints for tag creation and management.",
+            "item": [
+                {
+                    "name": "Create Tag",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"collabdocs-test\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/tags/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "tags",
+                                ""
+                            ]
+                        },
+                        "description": "Create a new tag. Concept: ModelSerializer, unique constraint, and validation."
+                    },
+                    "response": [],
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Status code is 201 Created or 400 Bad Request\", function () {",
+                                    "    pm.expect([201, 400]).to.include(pm.response.code);",
+                                    "});",
+                                    "",
+                                    "if (pm.response.code === 201) {",
+                                    "    pm.test(\"Tag created and ID stored in tag_id\", function () {",
+                                    "        var data = pm.response.json();",
+                                    "        pm.expect(data).to.have.property(\"id\");",
+                                    "        if (data.id) {",
+                                    "            pm.collectionVariables.set(\"tag_id\", data.id);",
+                                    "        }",
+                                    "    });",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Audit Logs",
+            "description": "Read-only endpoints for viewing audit log history.",
+            "item": [
+                {
+                    "name": "List Audit Logs",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/audit-logs/?actor={{user_id}}&timestamp__gte=2026-01-01T00:00:00Z&timestamp__lte=2027-01-01T00:00:00Z",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "audit-logs",
+                                ""
+                            ],
+                            "query": [
+                                {
+                                    "key": "actor",
+                                    "value": "{{user_id}}"
+                                },
+                                {
+                                    "key": "timestamp__gte",
+                                    "value": "2026-01-01T00:00:00Z"
+                                },
+                                {
+                                    "key": "timestamp__lte",
+                                    "value": "2027-01-01T00:00:00Z"
+                                }
+                            ]
+                        },
+                        "description": "List audit logs filtered by actor and date range. Note: check backend support for timestamp__gte and timestamp__lte query params. Concept: filter(), gte, lte, and query parameters."
+                    },
+                    "response": [],
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Status code is 200 OK\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});",
+                                    "",
+                                    "pm.test(\"Response is an array of audit logs\", function () {",
+                                    "    var data = pm.response.json();",
+                                    "    pm.expect(data).to.be.an(\"array\");",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}
